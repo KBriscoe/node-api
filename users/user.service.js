@@ -32,7 +32,36 @@ async function getUserFromProcedure(procedureName, username, password) {
     return output
 };
 
-async function addProject(procedureName, title, description, rules) {
+async function getUserListFromProcedure(procedureName, userGroup) {
+    const conn = new sql.ConnectionPool({
+        database:"IAT",
+        server:"localhost",
+        port:52202,
+        driver:"msnodesqlv8",
+        options: {
+          trustedConnection: true
+        }
+    });
+    await conn.connect().then(pool => {
+        return pool.request()
+        .input('puserGroup', sql.NVarChar, userGroup)
+        .output('UserList', sql.NVarChar)
+        .output('responseMessage', sql.NVarChar)
+        .execute(procedureName)
+    }).then(result => {
+        console.dir(result)
+        output = result.output
+    }).catch(err => {
+        //...error checking
+        console.log(err)
+    })
+
+    return output
+}
+
+async function addProject(procedureName, title, description, rules, labels, users) {
+    console.log(users)
+    console.log()
     const conn = new sql.ConnectionPool({
         database:"IAT",
         server:"localhost",
@@ -47,6 +76,8 @@ async function addProject(procedureName, title, description, rules) {
         .input('pTitle', sql.NVarChar, title)
         .input('pDescription', sql.NVarChar, description)
         .input('pRules', sql.NVarChar, rules)
+        .input('pLabels', sql.NVarChar, labels.toString())
+        .input('pUsers', sql.NVarChar, users.toString())
         .output('responseMessage', sql.NVarChar)
         .execute(procedureName)
     }).then(result => {
@@ -63,6 +94,7 @@ async function addProject(procedureName, title, description, rules) {
 module.exports = {
     authenticate,
     createProject,
+    getUserList,
     getAll
 };
 
@@ -79,11 +111,18 @@ async function authenticate({ username, password }) {
     }
 }
 
-async function createProject({ title, description, rules, labels }) {
+async function createProject({ title, description, rules, labels, users }) {
     console.log("Attempting create project: " + title)
-    const result = await Promise.resolve(addProject('CreateProject', title, description, rules));
+    const result = await Promise.resolve(addProject('CreateProject', title, description, rules, labels, users));
     console.log(result.responseMessage)
     return result.responseMessage
+}
+
+async function getUserList(userGroup) {
+    console.log("Retrieving User List: " + userGroup)
+    const result = await Promise.resolve(getUserListFromProcedure('GetUserList', userGroup));
+    console.log(result.responseMessage)
+    return result.UserList
 }
 
 async function getAll() {
