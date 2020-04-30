@@ -6,6 +6,7 @@ const userService = require('./user.service');
 router.post('/authenticate', authenticate);
 router.post('/createProject', createProject);
 router.post('/getUserList', getUserList);
+router.post('/getProjectList', getProjectList);
 router.get('/', getAll);
 
 module.exports = router;
@@ -30,6 +31,12 @@ function getUserList(req, res, next) {
         .catch(err => next(err));
 }
 
+function getProjectList(req, res, next) {
+    console.log(req)
+    userService.getProjectList(req.body)
+        .then(result => result ? res.json(result) : res.status(400).json({ message: 'Unable to Access Project List' }))
+        .catch(err => next(err));
+}
 
 function getAll(req, res, next) {
     userService.getAll()

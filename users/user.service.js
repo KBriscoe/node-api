@@ -44,8 +44,35 @@ async function getUserListFromProcedure(procedureName, userGroup) {
     });
     await conn.connect().then(pool => {
         return pool.request()
-        .input('puserGroup', sql.NVarChar, userGroup)
+        .input('pUserGroup', sql.NVarChar, userGroup)
         .output('UserList', sql.NVarChar)
+        .output('responseMessage', sql.NVarChar)
+        .execute(procedureName)
+    }).then(result => {
+        console.dir(result)
+        output = result.output
+    }).catch(err => {
+        //...error checking
+        console.log(err)
+    })
+
+    return output
+}
+
+async function getProjectListFromProcedure(procedureName, userID) {
+    const conn = new sql.ConnectionPool({
+        database:"IAT",
+        server:"localhost",
+        port:52202,
+        driver:"msnodesqlv8",
+        options: {
+          trustedConnection: true
+        }
+    });
+    await conn.connect().then(pool => {
+        return pool.request()
+        .input('puserID', sql.NVarChar, userID)
+        .output('ProjectList', sql.NVarChar)
         .output('responseMessage', sql.NVarChar)
         .execute(procedureName)
     }).then(result => {
@@ -95,6 +122,7 @@ module.exports = {
     authenticate,
     createProject,
     getUserList,
+    getProjectList,
     getAll
 };
 
@@ -123,6 +151,19 @@ async function getUserList(userGroup) {
     const result = await Promise.resolve(getUserListFromProcedure('GetUserList', userGroup));
     console.log(result.responseMessage)
     return result.UserList
+}
+
+async function getProjectList(userToken) {
+    try{
+        var decoded = jwt.verify(userToken['userToken'], config.secret);
+        console.log(decoded)
+    }catch(err){
+        return "Failed to authorize token"
+    }
+    console.log("Retrieving User Project List: " + decoded['sub'])
+    const result = await Promise.resolve(getProjectListFromProcedure('GetProjectListForUser', decoded['sub']));
+    console.log(result.responseMessage)
+    return result.ProjectList
 }
 
 async function getAll() {
